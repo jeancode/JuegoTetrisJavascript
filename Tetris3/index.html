@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris</title>
+    <!--include jquery-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="./sprites.js"></script>
+    <script>
+
+        $(document).ready(function(){
+
+
+            //call tetirs
+            var canTetris = document.getElementById("canTetris");
+            //get context
+            var ctx = canTetris.getContext("2d");
+
+      
+            
+            //size of canvas
+            var canTetrisW = $("#AreaJuego").width();
+            var canTetrisH = $("#AreaJuego").height();
+
+            //set size of canvas
+            canTetris.width = canTetrisW;
+            canTetris.height = canTetrisH;
+
+            console.log(canTetrisW);
+
+            //matrisbuffer de cuadros de 10x10
+            var matrisbuffer = [];
+            var matrisBufferGame = [];
+
+            let bufferx =  16;
+            let buffery =  25;
+
+            var gravedadValue = 1;
+
+
+
+            //tamaño de bufer igual a contenedor
+            for (let i = 0; i <= buffery; i++) {
+                matrisbuffer[i] = [];
+                matrisBufferGame[i] = [];
+                for (let j = 0; j <= bufferx; j++) {
+                    matrisbuffer[i][j] = 0;
+                    matrisBufferGame[i][j] = 0;
+                }
+            }
+
+
+            //render buffer
+            function renderBuffer(){
+
+
+                setPixel(16, 15, 0);
+
+
+                for (let i = 0; i <= buffery-1; i++) {
+
+                    
+                    for (let j = 0; j <= bufferx-1; j++) {
+
+
+                        if(matrisbuffer[i][j] == 1){
+                            ctx.fillStyle = "rgba(100, 200, 255, .8)";
+                            ctx.fillRect(j * 20, i * 20, 20, 20);
+                            //border
+                            ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+                            ctx.strokeRect(j * 20, i * 20, 20, 20);
+
+                        }else{
+                            ctx.fillStyle = "black";
+                            ctx.fillRect(j * 20, i * 20, 20, 20);
+                            //border
+                            ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+                            ctx.strokeRect(j * 20, i * 20, 20, 20);
+
+                        }
+                    }
+                }
+
+
+            }
+
+            //clear buffer
+            function clearBuffer(){
+
+                //clear canvas
+                ctx.clearRect(0, 0, canTetrisW, canTetrisH);
+
+                for (let i = 0; i < buffery; i++) {
+                    for (let j = 0; j < bufferx; j++) {
+                        matrisbuffer[i][j] = matrisBufferGame[i][j];
+                    }
+                }
+                
+            }
+            
+
+            //render buffer game
+            function renderBufferGame(){
+                    
+                    for (let i = 0; i <= buffery-1; i++) {
+    
+                        
+                        for (let j = 0; j <= bufferx-1; j++) {
+
+                            if(matrisBufferGame[i][j] == 1){
+                                ctx.fillStyle = "red";
+                                ctx.fillRect(j * 20, i * 20, 20, 20);
+                            }else{
+                                ctx.fillStyle = "black";
+                                ctx.fillRect(j * 20, i * 20, 20, 20);
+                            }
+                        }
+                    }
+
+            }
+
+                
+
+
+           //set pixel
+            function setPixel(x, y, color){
+
+                let alimity = matrisbuffer.length - 1;
+
+                let alimitx = matrisbuffer[alimity].length - 1;
+                
+                if(x >= alimitx){
+                    x = alimitx;
+                }
+
+                if(x <= 0){
+                    x = 0;
+                }
+
+                if(y >= alimity){
+                    y = alimity;
+                }
+
+                if(y <= 0){
+                    y = 0;
+                }
+
+                
+
+                matrisbuffer[y][x] = color;
+            }
+
+            //logica de juego
+            var piezasSelect;
+
+            var player = {
+                timepo: 0,
+                score: 0,
+                level: 10,
+                piezas: 0
+
+            }
+
+            //restar player
+            function restarPlayer(){
+                player.timepo = 0;
+                player.score = 0;
+                player.level = 0;
+                player.piezas = 0;
+            }
+
+            //add pieza
+
+
+
+            function addPieza(){
+
+                var srpitemax = sprites.length - 1;
+                
+                var sprite = sprites[Math.floor(Math.random() * srpitemax)];
+
+                var maxposicion = sprite.positions.length - 1;
+
+                var pieza = {
+                    x: 6,
+                    y: 0,
+                    shape: sprite,
+                    color: "blue",
+                    position: maxposicion,
+                    
+                }
+            
+
+                piezasSelect = pieza;
+
+                //add pieza player
+                player.piezas += 1;
+
+                $("#PiesasOut").html(player.piezas);
+                
+            }
+
+            function renderPiezaSelect(){
+                
+                var sprinte = piezasSelect;
+
+                var x = sprinte.x;
+                var y = sprinte.y;
+
+                var posicion = sprinte.position;
+              
+
+                var shape = sprinte.shape.positions[posicion];
+
+    
+                var shpebuffer =  shape.shap;
+
+                for(var  i = 0; i <= shpebuffer.length-1;i++){
+
+                    let xt = shpebuffer[i].x;
+                    let yt = shpebuffer[i].y;
+                    setPixel(xt+x, yt+y, 1);
+                }    
+            
+                
+                
+            }
+            
+
+            //gravedad
+            function gravedad(){
+
+
+                var sprinte = piezasSelect;
+
+                var x = sprinte.x;
+                var y = sprinte.y;
+
+                var posicion = sprinte.position;
+              
+
+                var shape = sprinte.shape.positions[posicion];
+
+                if(shape != undefined){
+                  
+
+                    var shpebuffer =  shape.shap;
+
+                    for(var  i = 0; i <= shpebuffer.length-1;i++){
+
+                        let xt = shpebuffer[i].x;
+                        let yt = shpebuffer[i].y;
+                        setPixel(xt+x, yt+y, 1);
+                    }    
+                }
+
+                piezasSelect.y = piezasSelect.y + gravedadValue;
+
+                //realposicion
+                var realposicion = [];
+
+                for(var  i = 0; i <= shpebuffer.length-1;i++){
+
+                    let xt = shpebuffer[i].x;
+                    let yt = shpebuffer[i].y;
+                    realposicion.push(yt+y);
+                }
+
+                var max = Math.max.apply(null, realposicion);
+
+                if(max >= buffery-1){
+                    piezasSelect.y = piezasSelect.y - 1;
+
+                    
+                    //for realposicion
+                    for(var  i = 0; i <= shpebuffer.length-1;i++){
+
+                        let xt = shpebuffer[i].x;
+                        let yt = shpebuffer[i].y;
+                        setPixelMatrisBuffer(xt+x, yt+y, 1);
+
+                    }
+
+                    addPieza();
+                }
+
+
+            }
+
+            function getPixelMatrisBuffer(x,y){
+                return matrisBufferGame[y][x];
+            }
+
+            //funcion set
+            function setPixelMatrisBuffer(x,y, color){
+                matrisBufferGame[y][x] = color;
+            }
+
+
+            function coliciones(){
+                //pieza actual
+                var sprinte = piezasSelect;
+
+                var x = sprinte.x;
+                var y = sprinte.y;
+
+                var shape = sprinte.shape.positions[sprinte.position];
+
+                //ver si un pixel de shape toca un pixel de buffer game
+
+                var shpebuffer =  shape.shap;
+                
+                var realposicion = [];
+
+
+
+                for(var  i = 0; i <= shpebuffer.length-1;i++){
+
+                    let xt = shpebuffer[i].x;
+                    let yt = shpebuffer[i].y;
+
+                    realposicion.push(
+                        {
+                            x: xt+x,
+                            y: yt+y
+                        }
+                    );
+                    
+                }
+
+
+
+                //getPixelMatrisBuffer(0,0)
+
+                for(var y = 0; y <= matrisBufferGame.length-1; y++){
+
+                    for(var x = 0; x <= matrisBufferGame[y].length-1; x++){
+
+
+                        if(matrisBufferGame[y][x] == 1){
+
+                            for(var  i = 0; i <= realposicion.length-1;i++){
+
+                                let xt = realposicion[i].x;
+                                let yt = realposicion[i].y;
+
+                                if(xt == x && yt == y){
+                                    piezasSelect.y = piezasSelect.y - 1;
+
+                                    //render pieza select to buffergame
+                                    for(var  i = 0; i <= shpebuffer.length-1;i++){
+
+                                        let xt = realposicion[i].x ;
+                                        let yt = realposicion[i].y -1;
+                                        
+                                        setPixelMatrisBuffer(xt, yt, 1);
+
+                                    }
+
+                                    addPieza();
+
+                                }
+                            }
+
+                            
+                        }
+
+                    }
+
+                }
+
+
+            }
+
+
+            function lineasCompletas(){
+            
+
+                for(var y = 0; y <= matrisBufferGame.length-1; y++){
+
+
+                    var lineas = 0;
+                    for(var x = 0; x <= matrisBufferGame[y].length-1; x++){
+
+                        if(matrisBufferGame[y][x] == 1){
+                            lineas++;
+                        }
+
+                    }
+
+                    if(lineas >= 16){
+
+                        ///borrar linea
+                        for(var x = 0; x <= matrisBufferGame[y].length-1; x++){
+                            setPixelMatrisBuffer(x, y, 0);
+                        }
+
+                        //mover los 1 de buffer game
+                        for(var y2 = y; y2 >= 0; y2--){
+
+                            for(var x = 0; x <= matrisBufferGame[y2].length-1; x++){
+
+                                if(matrisBufferGame[y2][x] == 1){
+                                    setPixelMatrisBuffer(x, y2, 0);
+                                    setPixelMatrisBuffer(x, y2+1, 1);
+                                }
+
+                            }
+
+                        }
+
+                        //agregar puntos
+                        player.score = player.score + 100;
+                      
+                    }
+
+                }
+
+                
+
+                return lineas;
+            }
+
+
+            //functyion render player
+            var contadorde1Segundo2 = 0;
+            var segunds = 0;
+            function renderPlayer(){
+                
+                console.log( player.score );
+
+
+                $("#puntosOut").html(player.score);
+                
+                $("#nivel").html(player.nivel);
+              
+
+
+                //1 segundo
+                if(contadorde1Segundo2 >= 100){
+               
+                    
+                    //timeout view
+                    $("#timeOut").html(segunds);
+
+                    segunds++;
+
+                    contadorde1Segundo2 = 0;
+
+                }
+
+
+                
+                contadorde1Segundo2++;
+
+            }
+
+
+            var timerlop = 100;
+            var valocidaddeBajada = 20;
+
+
+            addPieza();
+
+            var contadorde1Segundo = 0;
+
+            setInterval(function(){
+                
+                if(contadorde1Segundo >= valocidaddeBajada){
+                    
+                    contadorde1Segundo = 0;
+                                      
+                    gravedad();
+                }
+       
+                contadorde1Segundo++;
+
+            }, 10);
+            
+
+          
+           var  timer = setInterval(function(){
+
+                clearBuffer();
+
+                renderPiezaSelect();
+                
+
+                coliciones();
+
+                lineasCompletas();
+
+                renderBuffer();
+
+                renderPlayer();
+
+                
+            }, 1);
+
+
+
+
+            //3eventos
+            document.addEventListener("keydown", (e) =>{
+                if(e.keyCode == 37){
+                    
+                    //si algun pixel de la pieza esta en 0
+                    var shape = piezasSelect.shape.positions[piezasSelect.position];
+                    var shpebuffer =  shape.shap;
+                    var realposicion = [];
+
+                    for(var  i = 0; i <= shpebuffer.length-1;i++){
+
+                        let xt = shpebuffer[i].x;
+                        let yt = shpebuffer[i].y;
+                        realposicion.push(xt+piezasSelect.x);
+                    }
+
+
+                    var min = Math.min(...realposicion);
+
+                    if(min <= 0){
+                        piezasSelect.x = piezasSelect.x;
+                    }else{
+                        piezasSelect.x = piezasSelect.x - 1;
+                    }
+
+
+
+                 
+
+                }
+                if(e.keyCode == 39){
+
+                    //limitar a 12
+
+                    //si algun pixel de la pieza esta en 12
+                    var shape = piezasSelect.shape.positions[piezasSelect.position];
+                    var shpebuffer =  shape.shap;
+                    var realposicion = [];
+
+                    for(var  i = 0; i <= shpebuffer.length-1;i++){
+
+                        let xt = shpebuffer[i].x;
+                        let yt = shpebuffer[i].y;
+                        realposicion.push(xt+piezasSelect.x);
+                    }
+
+                    var max = Math.max(...realposicion);
+
+                    if(max >= 15){
+                        piezasSelect.x = piezasSelect.x;
+                    }else{
+                        piezasSelect.x = piezasSelect.x + 1;
+                    }
+
+
+                    
+                    
+                }
+                if(e.keyCode == 40){
+                    
+                    ////acelearar gravedad
+                    valocidaddeBajada = 2;
+                    
+                }
+                if(e.keyCode == 38){
+
+
+
+            
+                    //ver cuntas posiciones tiene la pieza
+                    var shape = piezasSelect.shape.positions;
+                    var maxposicion = shape.length-1;
+
+                    if(piezasSelect.position == maxposicion){
+                        piezasSelect.position = 0;
+                    }else{
+                        piezasSelect.position = piezasSelect.position + 1;
+                    }
+
+
+                    //sila la pieza se sale de la pantalla
+                    var shape = piezasSelect.shape.positions[piezasSelect.position];
+                    var shpebuffer =  shape.shap;
+                    var realposicion = [];
+
+                    for(var  i = 0; i <= shpebuffer.length-1;i++){
+
+                        let xt = shpebuffer[i].x;
+                        let yt = shpebuffer[i].y;
+                        realposicion.push(xt+piezasSelect.x);
+                    }
+
+                    var max = Math.max(...realposicion);
+
+                    if(max >= 15){
+                        piezasSelect.x = piezasSelect.x - 1;
+                    }
+
+                    var min = Math.min(...realposicion);
+
+                    if(min <= 0){
+                        piezasSelect.x = piezasSelect.x + 1;
+                    }
+
+                    
+                    //si alrrotar sobre pasa el piso
+                    var shape = piezasSelect.shape.positions[piezasSelect.position];
+                    var shpebuffer =  shape.shap;
+                    var realposicion = [];
+
+                    for(var  i = 0; i <= shpebuffer.length-1;i++){
+
+                        let xt = shpebuffer[i].x;
+                        let yt = shpebuffer[i].y;
+                        realposicion.push(yt+piezasSelect.y);
+                    }
+
+                    var max = Math.max(...realposicion);
+
+                    if(max >= 20){
+                        piezasSelect.y = piezasSelect.y - 1;
+                    }
+
+
+                    //calcular cuantos pixeles sobrepasan el piso y restarlos
+                    var shape = piezasSelect.shape.positions[piezasSelect.position];
+                    var shpebuffer =  shape.shap;
+                    var realposicion = [];
+
+                    for(var  i = 0; i <= shpebuffer.length-1;i++){
+
+                        let xt = shpebuffer[i].x;
+                        let yt = shpebuffer[i].y;
+                        realposicion.push(yt+piezasSelect.y);
+                    }
+
+                    var max = Math.max(...realposicion);
+
+                    if(max >= 20){
+                        piezasSelect.y = piezasSelect.y - 1;
+                    }
+
+                    var min = Math.min(...realposicion);
+
+                    if(min <= 0){
+                        piezasSelect.y = piezasSelect.y + 1;
+                    }
+
+
+                }
+            });
+
+            document.addEventListener("keyup", (e) =>{
+                if(e.keyCode == 40){
+                    valocidaddeBajada = 20;
+                }
+            });
+
+
+  
+
+
+
+
+        });
+
+
+    </script>
+
+    <style>
+        body{
+            margin: 0px;;
+            background-color: linear-gradient(90deg, #242222 0%, #242222 100%);
+            /*font apple */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+        }
+        #contenido{
+            width: 100%;
+            height: 100%;
+            background-color: #242222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+        }
+
+        #ContentTetris{
+            width: 560px;
+            height: 500px;
+            background-color: black;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #FloatCredits{
+            width: 300px;
+            height: 100px;
+            position: fixed;
+            z-index: 2;
+            left: calc(50% - (300px / 2 ));
+            top: 80px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        #name{
+            font-size: 50px;
+            font-weight: lighter;
+            color: white;
+            margin-bottom: 10px;
+            text-shadow: 0px 0px 10px white;
+        }
+        #author{
+            font-size: 20px;
+            color: gray;
+            text-shadow: 0px 0px 10px red;
+        }
+        #ContentTetris{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #AreaJuego{
+            flex: 1;
+            width: 50%;
+            height: 500px;
+        
+            background-color: rgb(41, 41, 41);
+        }
+        #AreaPuntuaAcion{
+            width: 230px;
+            height: 100%;
+            background-color: rgb(0, 0, 0);
+            color: white;
+            display: flex;
+            justify-items: center;
+            align-items: center;
+            padding-top: 30px;
+            flex-direction: column;
+        }
+        .SimpleLabel{
+            font-size: 20px;
+            font-weight: lighter;
+            margin-bottom: 10px;
+        }
+        .PuntosView{
+            width: 100%;
+            background-color: rgb(0, 0, 0);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            background: red;;
+            margin-top: 20px;
+            
+        }
+        .puntoViewC{
+            width: 100%;
+            min-height: 35px;
+            background-color: rgb(0, 0, 0);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            font-weight: lighter;
+            border:1px solid rgba(255, 255, 255, 0.096);
+            background: linear-gradient(90deg, rgb(66, 30, 30), rgb(51, 51, 150))
+            
+        }
+        .AreaButtons{
+            border:1px solid rgba(255, 255, 255, 0.089);
+            width: 100%;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding-top: 10px;
+
+        }
+        .boton{
+            width: 100px;
+            height: 30px;
+            background-color: rgb(73, 73, 73);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            font-weight: lighter;
+            margin-bottom: 10px;
+            cursor: pointer;
+            -webkit-transition: all 0.5s ease;
+        }
+        .boton:hover{
+            background-color: rgb(51, 153, 194);
+            -webkit-transition: all 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="FloatCredits">
+
+        <div id="name">Tetris</div>
+        <div id="author"> By: Jean Code</div>
+
+
+    </div>
+
+    <div id="contenido">
+
+
+        <div id="ContentTetris">
+
+
+            <div id="AreaJuego">
+
+                <!--oajal estes entendiendo el codigo esto muy borracho para entender lo que hago-->
+                <canvas id="canTetris">
+
+
+                </canvas>
+
+            </div>
+
+            <div id="AreaPuntuaAcion">
+
+                <div class="SimpleLabel">Puntuacion</div>
+                <div class="PuntosView">
+                    <div class="puntoViewC" id="timeOut">00:00:00</div>
+                    <div class="puntoViewC" id="puntosOut">Puntos: 0</div>
+                    <div class="puntoViewC" id="PiesasOut">Piezas: 0</div>
+
+                </div>
+
+                <div class="AreaButtons">
+                    <input type="submit" class="boton" value="Restart">
+
+                    <input type="submit" class="boton" value="Start">
+
+                </div>
+            </div>
+
+
+        </div>
+
+
+    </div>
+</body>
+</html>
